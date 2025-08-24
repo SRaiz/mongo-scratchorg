@@ -12,7 +12,7 @@ import logger
 CLI_TOOLS_DIR       = Path( __file__ ).resolve().parent
 SCRIPT_DIR          = CLI_TOOLS_DIR.parent
 REPO_ROOT           = SCRIPT_DIR.parent
-SFDX_PROJECT_DIR    = REPO_ROOT / 'Environment' / 'salesforce-scratchorg-poc'
+SFDX_PROJECT_DIR    = REPO_ROOT
 SCRATCH_DEF         = SFDX_PROJECT_DIR / 'config' / 'project-scratch-def.json'
 SOURCE_DIR          = SFDX_PROJECT_DIR / 'force-app'
 
@@ -114,24 +114,24 @@ def login_devhub( devhub_url: str, force_auth: bool ):
     logger.step( 'AUTHORIZING DEV HUB' )
     orgs = run_subprocess( ['sf', 'org', 'list'] ) or ''
     
-    if force_auth or ('Devhub' not in orgs):
+    if force_auth or ('DevHub' not in orgs):
         logger.status( 'Logging into Dev Hub ...' )
         run_subprocess(
             [
                 'sf', 'org', 'login', 'web', 
-                '--alias', 'Devhub', 
+                '--alias', 'DevHub', 
                 '--set-default-dev-hub', 
                 '--instance-url', devhub_url
             ],
             passthrough = True
         )
     else:
-        logger.status( 'Using existing Dev Hub alias `Devhub`.' )
+        logger.status( 'Using existing Dev Hub alias `DevHub`.' )
     
     # --- Verify if now devhub is existing ---
     orgs = run_subprocess( ['sf', 'org', 'list'] ) or ''
     
-    if 'Devhub' not in orgs:
+    if 'DevHub' not in orgs:
         logger.error( 'Devhub alias not found after login' )
         sys.exit(1)
         
@@ -202,24 +202,24 @@ def main():
     logger.status( f'Normalized alias: {scratch_alias}' )
 
     # 1. Git setup
-    git_prepare_branch(env, args.review)
+    git_prepare_branch( env, args.review )
     logger.success( 'Git branch ready.' )
 
     # 2. SF CLI check + Dev Hub login
     check_sfcli_exists()
-    login_devhub(args.devhub_url, args.force_devhub_connection)
+    login_devhub( args.devhub_url, args.force_devhub_connection )
     logger.success( 'Dev Hub ready.' )
 
     # 3. Scratch org creation
-    create_scratch_org(scratch_alias, args.review, args.preview)
+    create_scratch_org( scratch_alias, args.review, args.preview )
     logger.success( 'Scratch org created.' )
 
     # 4. Push/deploy source
-    deploy_source_metadata(scratch_alias)
+    deploy_source_metadata( scratch_alias )
     logger.success( 'Source deployed.' )
 
     # 5. Open org
-    open_scratch_org( scratch_alias, args.review)
+    open_scratch_org( scratch_alias, args.review )
     logger.success( 'All done. Happy building!' )
     
     
