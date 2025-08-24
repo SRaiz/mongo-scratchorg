@@ -14,6 +14,7 @@ SCRIPT_DIR          = CLI_TOOLS_DIR.parent
 REPO_ROOT           = SCRIPT_DIR.parent
 SFDX_PROJECT_DIR    = REPO_ROOT
 SCRATCH_DEF         = SFDX_PROJECT_DIR / 'config' / 'project-scratch-def.json'
+SCRATCH_DEF_SHAPE   = SFDX_PROJECT_DIR / 'config' / 'project-scratch-def-shape.json'
 SOURCE_DIR          = SFDX_PROJECT_DIR / 'force-app'
 
 # --- 
@@ -71,6 +72,7 @@ def parse_args():
     parser.add_argument( '--devhub-url', default = 'https://login.salesforce.com', help = 'Dev Hub login URL' )
     parser.add_argument( '--force-devhub-connection', action = 'store_true', help = 'Force re-auth to Dev Hub' )
     parser.add_argument( '--preview', action = 'store_true', help = 'Try seasonal Preview release (if supported)' )
+    parser.add_argument( '--shape', action='store_true', help='Use the org-shape-based scratch definition' )
     
     return parser.parse_args()
 
@@ -136,21 +138,23 @@ def login_devhub( devhub_url: str, force_auth: bool ):
         sys.exit(1)
         
         
-def create_scratch_org( environment_name: str, review_mode: bool, preview_mode: bool ):
+def create_scratch_org( environment_name: str, review_mode: bool, preview_mode: bool, def_path: Path ):
     logger.step( 'CREATE SCRATCH ORG' )
     logger.status( 'Attempting to deploy new Scratch Org...' )
     
-    if not SCRATCH_DEF.exists():
-        logger.error( f'Scratch definition not found: {SCRATCH_DEF}' )
+    if not def_path.exists():
+        logger.error( f'Scratch definition not found: {def_path}' )
         sys.exit(1)
     
     duration_in_days = '7' if review_mode else '30'
     scratch_org_creation_cmd = [
         'sf', 'org', 'create', 'scratch', 
-        '--definition-file', str( SCRATCH_DEF ),
+        '--definition-file', str( def_path ),
         '--alias', environment_name,
         '--duration-days', duration_in_days,
-        '--set-default'
+        '--set-default',
+        '--target-dev-hub', 'DevHub',
+        '--wait', '20'                        # capture jobId/status
     ]
     
     if preview_mode:
@@ -168,15 +172,21 @@ def deploy_source_metadata( environment_name: str ):
     
     logger.status( 'Deploying force-app to scratch org ...' )
     
-    run_subprocess(
-        [
-            'sf', 'project', 'deploy', 'start',
-            '--target-org', environment_name,
-            '--source-dir', str( SOURCE_DIR )
-        ],
-        passthrough = True, 
-        cwd = str( SFDX_PROJECT_DIR )   # Ensures that the sfdx runs in correct directory
-    )
+    # --- Try a normal deploy ---
+    try:
+        run_subprocess(
+            [
+                'sf', 'project', 'deploy', 'start',
+                '--target-org', environment_name,
+                '--source-dir', str( SOURCE_DIR )
+            ],
+            passthrough = True, 
+            cwd = str( SFDX_PROJECT_DIR )   # Ensures that the sfdx runs in correct directory
+        )
+        return
+    except SystemExit:
+        logger.error( 'Deploy failed. Resolve conflicts or metadata errors before retrying.' )
+        sys.exit(1)
     
     
 def open_scratch_org( environment_name: str, review_mode: bool ):
@@ -211,7 +221,8 @@ def main():
     logger.success( 'Dev Hub ready.' )
 
     # 3. Scratch org creation
-    create_scratch_org( scratch_alias, args.review, args.preview )
+    scratch_def_path = SCRATCH_DEF_SHAPE if args.shape else SCRATCH_DEF
+    create_scratch_org( scratch_alias, args.review, args.preview, scratch_def_path )
     logger.success( 'Scratch org created.' )
 
     # 4. Push/deploy source

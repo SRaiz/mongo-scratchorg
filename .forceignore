@@ -10,3 +10,30 @@ package.xml
 
 # LWC Jest
 **/__tests__/**
+
+# Skip standard profiles and noisy UI metadata
+force-app/main/default/profiles/*
+
+# Managed / shape-seeded or not-owned
+force-app/main/default/permissionsetgroups/force__*
+force-app/main/default/permissionsets/sfdcInternalInt__*
+
+# Standard apps (not deployable by us)
+force-app/main/default/applications/standard__*.app-meta.xml
+
+# Utility bars often differ in shapes
+force-app/main/default/flexipages/*UtilityBar.flexipage-meta.xml
+
+# AppMenu often differs
+force-app/main/default/appMenus/*
+
+# CRTs that need packages
+force-app/main/default/reportTypes/Program_*_sfdcSESv60.reportType-meta.xml
+force-app/main/default/reportTypes/Program_*_sfdcSESv61.reportType-meta.xml
+
+# Field Service layouts if you’re NOT enabling FieldService
+# (remove these ignores if you add "FieldService" to features)
+force-app/main/default/layouts/WorkPlan-*.layout-meta.xml
+
+# Problematic/oversized Waitlist layout (until you rename/fix it)
+force-app/main/default/layouts/Waitlist-*.layout-meta.xml
