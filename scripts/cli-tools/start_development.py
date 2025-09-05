@@ -221,7 +221,7 @@ def main():
     logger.success( 'Dev Hub ready.' )
 
     # 3. Scratch org creation
-    scratch_def_path = SCRATCH_DEF_SHAPE if args.shape else SCRATCH_DEF
+    scratch_def_path = SCRATCH_DEF_SHAPE if ( args.shape or args.review ) else SCRATCH_DEF
     create_scratch_org( scratch_alias, args.review, args.preview, scratch_def_path )
     logger.success( 'Scratch org created.' )
 
