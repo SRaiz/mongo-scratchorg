@@ -37,3 +37,47 @@ force-app/main/default/layouts/WorkPlan-*.layout-meta.xml
 
 # Problematic/oversized Waitlist layout (until you rename/fix it)
 force-app/main/default/layouts/Waitlist-*.layout-meta.xml
+
+# Field Service and Commerce/OM layouts and fields
+**/layouts/ServiceAppointment*.layout-meta.xml
+**/layouts/ServiceResource*.layout-meta.xml
+**/layouts/ServiceTerritory*.layout-meta.xml
+**/layouts/Cart*.layout-meta.xml
+**/layouts/WebCart*.layout-meta.xml
+**/layouts/WebStore*.layout-meta.xml
+**/layouts/Fulfillment*.layout-meta.xml
+**/objects/Case/fields/SourceId.field-meta.xml
+**/objects/Event/fields/ServiceAppointmentId.field-meta.xml
+**/objects/Product2/fields/ProductClass.field-meta.xml
+**/objects/Product2/fields/Type.field-meta.xml
+**/objects/OrderItem/fields/ReferencePrice.field-meta.xml
+
+# --- New ignores for scratch org deploy issues ---
+
+# Appointment Invitation layouts
+force-app/main/default/layouts/AppointmentInvitation-*.layout-meta.xml
+
+# Assigned Resource (Field Service)
+force-app/main/default/layouts/AssignedResource-*.layout-meta.xml
+
+# Engagement Channel (Marketing/Engagement)
+force-app/main/default/layouts/EngagementChannelType-*.layout-meta.xml
+
+# Return Order (Commerce/OM)
+force-app/main/default/layouts/ReturnOrderItem*.layout-meta.xml
+
+# Shift / TimeSlot / WorkType (FSL Scheduling)
+force-app/main/default/layouts/Shift-*.layout-meta.xml
+force-app/main/default/layouts/ShiftWorkTopic-*.layout-meta.xml
+force-app/main/default/layouts/TimeSlot-*.layout-meta.xml
+force-app/main/default/layouts/WorkType-*.layout-meta.xml
+force-app/main/default/layouts/WorkTypeGroup-*.layout-meta.xml
+
+# Shipping (Commerce/OM)
+force-app/main/default/layouts/ShippingConfigurationSet-*.layout-meta.xml
+force-app/main/default/layouts/ShippingRateArea-*.layout-meta.xml
+force-app/main/default/layouts/ShippingRateGroup-*.layout-meta.xml
+force-app/main/default/layouts/StandardShippingRate-*.layout-meta.xml
+
+# Product2 unsupported standard fields / attributes
+force-app/main/default/objects/Product2.object-meta.xml
