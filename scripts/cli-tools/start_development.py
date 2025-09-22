@@ -195,6 +195,42 @@ def open_scratch_org( environment_name: str, review_mode: bool ):
     run_subprocess( ['sf', 'org', 'open', '--target-org', environment_name], passthrough = True )
     
 
+def cleanup( created_branch: str | None, created_scratch_alias: str | None ):
+    # Delete scratch org if it was created
+    if created_scratch_alias:
+        logger.status( f'Deleting scratch org {created_scratch_alias} ...' )
+        try:
+            run_subprocess(
+                [
+                    'sf', 'org', 'delete', 'scratch', 
+                    '--target-org', created_scratch_alias, 
+                    '--no-prompt'
+                ], 
+                passthrough = True
+            )
+        except SystemExit:
+            logger.error(f'Failed to delete scratch org {created_scratch_alias}. You may need to delete manually.')
+
+    # Delete git branch and switch back to main
+    if created_branch:
+        logger.status( f'Deleting local branch {created_branch} and switching back to main ...' )
+        try:
+            run_subprocess(
+                [
+                    'git', 'checkout', 'main'
+                ], 
+                passthrough = True
+            )
+            run_subprocess(
+                [
+                    'git', 'branch', '-D', created_branch
+                ], 
+                passthrough = True
+            )
+        except SystemExit:
+            logger.error(f'Failed to delete branch {created_branch}. You may need to clean up manually.')
+    
+
 def main():
     logger.header( 'Scratch Org Script' )
 
@@ -210,28 +246,43 @@ def main():
 
     logger.status( f'Environment (raw): {raw_env}' )
     logger.status( f'Normalized alias: {scratch_alias}' )
+    
+    created_scratch_alias = None
+    created_branch = None
 
-    # 1. Git setup
-    git_prepare_branch( env, args.review )
-    logger.success( 'Git branch ready.' )
+    try:
+        # 1. Git setup
+        git_prepare_branch( env, args.review )
+        created_branch = None if args.review else env  # only track if we actually created one
+        logger.success( 'Git branch ready.' )
 
-    # 2. SF CLI check + Dev Hub login
-    check_sfcli_exists()
-    login_devhub( args.devhub_url, args.force_devhub_connection )
-    logger.success( 'Dev Hub ready.' )
+        # 2. SF CLI check + Dev Hub login
+        check_sfcli_exists()
+        login_devhub( args.devhub_url, args.force_devhub_connection )
+        logger.success( 'Dev Hub ready.' )
 
-    # 3. Scratch org creation
-    scratch_def_path = SCRATCH_DEF_SHAPE if ( args.shape or args.review ) else SCRATCH_DEF
-    create_scratch_org( scratch_alias, args.review, args.preview, scratch_def_path )
-    logger.success( 'Scratch org created.' )
+        # 3. Scratch org creation
+        scratch_def_path = SCRATCH_DEF_SHAPE if ( args.shape or args.review ) else SCRATCH_DEF
+        create_scratch_org( scratch_alias, args.review, args.preview, scratch_def_path )
+        created_scratch_alias = scratch_alias
+        logger.success( 'Scratch org created.' )
 
-    # 4. Push/deploy source
-    deploy_source_metadata( scratch_alias )
-    logger.success( 'Source deployed.' )
+        # 4. Push/deploy source
+        deploy_source_metadata( scratch_alias )
+        logger.success( 'Source deployed.' )
 
-    # 5. Open org
-    open_scratch_org( scratch_alias, args.review )
-    logger.success( 'All done. Happy building!' )
+        # 5. Open org
+        open_scratch_org( scratch_alias, args.review )
+        logger.success( 'All done. Happy building!' )
+        
+    except Exception as ex:
+        logger.error( f'Unexpected error: {ex}')
+        cleanup( created_branch, created_scratch_alias )
+        sys.exit(1)
+        
+    except SystemExit as se:
+        cleanup( created_branch, created_scratch_alias )
+        raise  # re-raise to preserve exit code
     
     
 if __name__ == '__main__':
